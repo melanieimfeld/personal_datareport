@@ -94,6 +94,17 @@ button {
   direction: rtl;
 } 
 
+.selected {
+    color: #91cbec;
+}
+
+#viz {
+  width:25%;
+  padding:0.5em;
+  /*height:20%;*/
+}
+
+
 
 hr { 
  height: 1px;
@@ -127,13 +138,19 @@ svg text {
   <input id='slider' type='range' min='100' max='200' step='1' value='0' />
   <form>
   <ul id="myCheck">
-  <li value="london"> <a class='fancy' href="#">London</a></li>
-  <li value="ny"><a class='fancy' href="#">New York</a></li>
-  <li value="san_fran"><a class='fancy' href="#">San Francisco</a></li>
-  <li value="mk"><a class='fancy' href="#">Marrakech</a></li>
-  <li value="zh"><a class='fancy' href="#">Zurich</a></li>
+    <li value="london"> <a class='fancy selected' href="#">London</a></li>
+    <li value="ny"><a class='fancy' href="#">New York</a></li>
+    <li value="san_fran"><a class='fancy' href="#">San Francisco</a></li>
+    <li value="mk"><a class='fancy' href="#">Marrakech</a></li>
+    <li value="zh"><a class='fancy' href="#">Zurich</a></li>
   </ul>
-  <div id="viz"></div>
+  </form>
+  <div id="viz">
+     <svg id="chart" width="300" height="200"
+      viewBox="0 0 300 200"
+      perserveAspectRatio="xMinYMid">
+    </svg>
+  </div>
   <!-- <svg width="200" height="100"></svg> -->
   <h3 class='fancy'>Distance:</h3>
 
@@ -143,7 +160,7 @@ svg text {
   <script src="https://d3js.org/d3.v5.min.js"></script>
 
   <script>
-  
+
 //----------------user selection------------
 
 
@@ -252,18 +269,13 @@ map.on("load", function() {
 
   dist.appendChild(h3);
 
- //  setInterval(function(){ //pack setInterval into a variable
- //   animate2(city);
- //      //graph();
- //    //console.log('slider', aniSpeed);
-
-  // }, aniSpeed); //draw 1 new line every 1 sec
-
 
   $(document).on('click', '#myCheck li a', function () {
         //change datainput
         city = $(this).closest('li').attr('value');
-        console.log(city);
+        $('.selected').removeClass('selected'); //remove all selected classes
+        $(this).addClass('selected'); //add selected class to this object
+        console.log('city', city);
         map.easeTo({center:centers[city].coords, zoom:centers[city].zoom});
         citychange = true;
         aniSpeed = 100;
@@ -310,7 +322,6 @@ map.on("load", function() {
             geojson.features[0].geometry.properties = []; //empty out array
             citychange = false;
 
-            console.log('reached end');
             
           // console.log('city was changed to', city, 'restart at frame',counter, 'empty data', geojson.features);
         } else if (!isPaused){
@@ -375,54 +386,51 @@ map.on("load", function() {
 
 }); //map on
 
-//d3 bubble chart 
-var data = [26,30,20,10];
+//221 days stationary, 10 days foot, 28 days vehicle, 2 days plane
+var data2 = [
+{key: 'vehicle', value:28},
+{key: 'walking', value:10},
+{key: 'plane', value:2}];
 
-var data2 = [{key: 'stationary', value:26},
-{key: 'walking', value:30},
-{key: 'vehicle', value:20},
-{key: 'plane', value:15}];
 
-var sampleSVG = d3.select("#viz")
-.append("svg")
-.attr("width", 200)
-.attr("height", 250);    
+var sampleSVG = d3.select("#chart");
+// .append("svg")
+// .attr("width", 300)
+// .attr("height", 250);
+console.log(sampleSVG);
+
+var aspect = $("#chart").width() / $("#chart").height() ;
+var container = $("#chart").parent();
+
+console.log('whats the aspect', aspect, $("#chart").width(), container);
+
+d3.select(window)
+.on("resize", function() {
+    var targetWidth = container.width();
+    console.log(targetWidth,document.documentElement.clientWidth);
+    sampleSVG.attr("width", targetWidth);
+    sampleSVG.attr("height", Math.round(targetWidth / aspect));
+  });  
 
 sampleSVG.selectAll("circle")
 .data(data2)
         .enter().append("circle") //'enter()' puts elements in the missing selection, 'append' duplicates circle-html elements
         .style("fill", "#ff3642")
         .attr("r", function(d,i){ return d.value; })
-        .attr("cx", 30)
+        .attr("cx", 28)
         .attr("cy", function(d,i) {return 40+i*60})
         .on("mouseover", function(){d3.select(this).style("fill", "#91cbec");})
         .on("mouseout", function(){d3.select(this).style("fill", "#ff3642");})
-        
+
 
         sampleSVG.selectAll(".text")     
         .data(data2)
         .enter()
         .append("text")
-        .attr('x', 80)
+        .attr('x', 70)
         .attr("y",function(d,i) {return 45+i*60})
-        .text(function(d) { return d.key; });   
-
-        sampleSVG.selectAll(".text")     
-        .data(data2)
-        .enter()
-        .append("text")
-        .style("fill", '#ffffff')
-        .attr('x', 20)
-        .attr("y",function(d,i) {return 45+i*60})
-        .text(function(d) { return d.value; });  
-
-// Call the resize function whenever a resize event occurs
-window.addEventListener('resize', resize, true)
-//d3.select(window).on('resize', resize());
-
-function resize() {
-  console.log('resize')
-}
+        .text(function(d) { return d.value + ' days ' + d.key; });   
+ 
 
 
 </script>
