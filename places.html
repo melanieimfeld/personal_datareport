@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>Places I've been</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.49.0/mapbox-gl.js'></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src='https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.js'></script>
+  <!-- <script src='js/london.js'></script> -->
+  <script src ='js/london2.js'></script>
+  <script src='js/san_fran2.js'></script>
+  <script src='js/zh2.js'></script>
+  <script src='js/mk2.js'></script>
+  <script src='js/ny2.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.49.0/mapbox-gl.css' rel='stylesheet' />
+ <!--  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">  -->
+  <link href="https://fonts.googleapis.com/css?family=Libre+Baskerville:700,400" rel="stylesheet"> 
+  <link href='css/base.css' rel='stylesheet' />
+  <style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
+</head>
+<body>
+
+  <style>
+  button {
+    position: absolute;
+    top: 30px;
+    left:10px;
+    /*z-index: 99px;*/
+  }
+
+  /* changes written text in button depending on status*/
+  #pause.button::after {
+    content: 'Pause';
+    /*  z-index: 99px;*/
+  }
+
+  #pause.pause::after {
+    content: 'Play';
+    /* z-index: 99px;*/
+  }
+
+
+  .marker {
+    background-image: url('icon.png');
+    background-size: cover;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+
+  .overlayTop { position: absolute; 
+   top: 20px; 
+   left: 20px; 
+   z-index: 99; }
+
+
+   .overlay { 
+    position: absolute;
+   z-index: 99; 
+ }
+
+   .overlayBot { position: absolute; 
+     bottom: 50px; 
+     z-index: 99; }
+
+
+     #pause {
+       bottom:10px;
+     }
+
+     #features {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 300px;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .line {
+      fill: none;
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+
+    .slider {
+      direction: rtl;
+    } 
+
+
+    hr { 
+    	height: 1px;
+    	background-color: #ff3642 !important;
+    	border: none !important;
+  	}
+
+  svg text {
+    fill:#ff3642;
+    font: 7px;  
+    font-family: 'Libre Baskerville', serif;
+    font-weight: 400;
+    text-anchor: right;
+  }
+
+  .header { position: absolute; 
+      text-align: center;
+      z-index: 99; }
+
+
+  </style>
+  <div id='map' class='col12'> </div>
+  	 <div class='header col12'>
+        <h3 class='fancy'>I. WHERE I WENT</h3>
+        <hr>
+      </div>
+    <div class='overlay col12 pad4x space-top8'>
+     <a href='#' id='pause' class='button'></a>
+     <form id="myForm">
+      <input id='slider' type='range' min='100' max='200' step='1' value='0' />
+    <form>
+     <ul id="myCheck">
+      <li value="london"> <a class='fancy' href="#">London</a></li>
+      <li value="ny"><a class='fancy' href="#">New York</a></li>
+      <li value="san_fran"><a class='fancy' href="#">San Francisco</a></li>
+      <li value="mk"><a class='fancy' href="#">Marrakech</a></li>
+      <li value="zh"><a class='fancy' href="#">Zurich</a></li>
+    </ul>
+    <div id="viz"></div>
+  </div>
+  <div class='overlayBot col12 pad4x' id="update">
+    <svg width="200" height="100"></svg>
+    <h3 class='fancy'>Distance:</h3>
+  </div>
+
+		<!-- <div class='col12 pad4 overlay'>
+			
+		</div> -->
+<!-- 
+	</div> -->
+	
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<script>
+  
+//----------------user selection------------
+
+
+    mapboxgl.accessToken = 'pk.eyJ1IjoiaW1mZWxkIiwiYSI6ImNqMzR2aTE0dDAwaGYyd3Fncmc1ODRkemcifQ.HTl7csPq_0VP3yO28G2u8Q';
+
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/imfeld/cjdcztlhmd71z2rlc7amcodpo',
+      center: [-0.1257400, 51.5285300],
+      zoom: 12
+    });
+
+
+// Create a GeoJSON source with an empty lineString.
+var geojson = {
+  "type": "FeatureCollection",
+  "features": [{
+    "type": "Feature",
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+      [-0.1257400, 51.5085300]
+      ]
+    },"properties": {
+      "distance_m":[0
+      ]
+    }
+  }]
+};
+
+
+var centers = {'london':
+{'coords':[-0.1257400, 51.5085300],'zoom':11},
+'san_fran':
+{'coords':[-482.421586,37.665993],'zoom':9},
+'zh':
+{'coords':[8.54,47.38861],'zoom':12},
+'mk':
+{'coords':[-8.00105,31.6312887],'zoom':12},
+'ny':
+{'coords':[-73.94970,40.78112],'zoom':10},
+};
+
+var aniSpeed = 100; // number of frames per longitude degree
+var animation; // to store and cancel the animation
+var test;
+var startTime = 0;
+var citychange=false;
+var progress = 0; // progress = timestamp - startTime
+var resetTime = false; // indicator of whether time reset is needed for the animation
+var pauseButton = document.getElementById('pause');
+var style = {
+  property: 'distance_m',
+  type: 'interval',
+  stops: [
+  [0.00, '#f1f075'],
+  [20.00, '#99d8c9'],
+  [50.00, '#e55e5e'],
+  [100.00, '#bcbddc'],
+  [150.00, '#e55e5f'],
+  [200.00, '#ed6498']
+  ]}
+  var counter = 0
+  var citychange = false;
+  var lengthdata = 30;
+  var city = 'london';
+  var geodist=0;
+  var el = document.createElement('div');
+  el.className = 'marker';
+  var marker = new mapboxgl.Marker(el)
+  .setLngLat([0,0])
+  .addTo(map);  
+  var dist = document.getElementById("update");
+  var h3= document.createElement('h3');
+  var current;
+
+//change speed of animation dynamically
+  document.getElementById('slider').addEventListener('input', function(e){
+    console.log('slider', e.target.value,100 +(101 - e.target.value));
+    aniSpeed = 101+(100 - e.target.value);
+  })
+
+
+  map.on("load", function() {
+    map.addLayer({
+      'id': 'line-animation',
+      'type': 'line',
+      'source': {
+        'type': 'geojson',
+        'data': geojson
+      },
+      'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+      },
+      'paint': {
+        'line-width': 2,
+        'line-opacity': 0.7,
+        'line-color':color(window[city][counter].distance_m)
+
+      }
+    });
+
+  console.log('dist', dist);
+
+  dist.appendChild(h3);
+
+  setInterval(function(){ //pack setInterval into a variable
+   animate2(city);
+      //graph();
+    
+
+	}, aniSpeed); //draw 1 new line every 1 sec
+
+
+  $(document).on('click', '#myCheck li a', function () {
+     		//change datainput
+     		city = $(this).closest('li').attr('value');
+        console.log(city);
+        map.easeTo({center:centers[city].coords, zoom:centers[city].zoom});
+        citychange = true;
+        document.getElementById("myForm").reset();
+     		//clearInterval(test); //these function don't seem to contribute
+       //  setInterval(function(){
+       //    animate2(city);
+       //  }, 100);
+     });
+
+  var isPaused = false;
+  //click button to pause animation
+  pauseButton.addEventListener('click', function(e) {
+        //he toggle() method of the DOMTokenList interface removes a given token from the list and returns false. If token doesn't exist it's added and the function returns true.
+        //console.log(pauseButton.classList); //returns a domtokenlist
+        pauseButton.classList.toggle('pause'); //value 'pause' is added to class
+        if (pauseButton.classList.contains('pause')) { //'true or false depending on toggle
+            //stop animation
+          e.preventDefault();	
+            //clearInterval(test);
+            console.log('STOP', pauseButton.classList.contains('pause'));
+            isPaused = true;
+          } else {
+            //resume
+            e.preventDefault();
+            console.log('RESUME', pauseButton.classList.contains('pause'))
+        //      setInterval(function(){
+        //   animate2(city);
+        // }, 100);
+        isPaused = false;
+      }
+    });
+
+
+  function animate2() {
+      // //if data is finished or if city is changed
+      //var userselection = window[city];
+
+      if (counter >= Object.keys(london).length-1 || citychange == true) {
+        counter = 0;
+        geodist = 0;
+            geojson.features[0].geometry.coordinates = []; //empty out array
+            geojson.features[0].geometry.properties = []; //empty out array
+            citychange = false;
+            
+          // console.log('city was changed to', city, 'restart at frame',counter, 'empty data', geojson.features);
+        } else if (!isPaused){
+
+        //console.log('distances ', window[city][counter].distance_m);  
+        //console.log('is it really empty data', geojson.features); //nope, it's not
+        //var x = window[city].features[counter].geometry.coordinates[0]; //lon
+        //var y = window[city].features[counter].geometry.coordinates[1]; //lat
+        var x = window[city][counter].lon; //lon
+        var y = window[city][counter].lat; //lat
+
+        //console.log('newdata', window[city][counter].lon);
+        
+        geojson.features[0].geometry.coordinates.push([x, y]);
+        map.getSource('line-animation').setData(geojson); 
+
+
+        //map.setPaintProperty('line-animation', 'line-color', color(window[city][counter].distance_m));
+        map.setPaintProperty('line-animation', 'line-color', '#ff3642');
+        //add markers
+        marker.remove();
+
+        marker = new mapboxgl.Marker(el)
+        .setLngLat([window[city][counter].lon,window[city][counter].lat])
+        .addTo(map);
+        
+       //distancetracker
+       current = window[city][counter].distance_m;
+       
+       geojson.features[0].properties.distance_m.push(current);
+                    //add it to previous distances
+                    geodist = geodist + current;
+                    //add it to html
+                    h3.innerHTML = Math.round(geodist/1000) +' km';
+                    h3.className = 'fancy';
+      //attach a 
+      //console.log('loop is running, frame:',counter);
+      counter++;
+    }
+
+    //window.setTimeout(animate2, aniSpeed);
+    
+  };
+
+
+  //animate2(city);
+
+  function color(dist){
+    if (dist < 4){
+      return '#f1f075';
+    } else if (dist >= 4 & dist < 15){
+      return '#99d8c9';
+    } else if (dist >= 15 & dist < 150){
+      return '#e55e5e';
+    } else {
+      return '#bcbddc';
+    }
+  }
+
+
+}); //map on
+
+//d3 bubble chart 
+  var data = [26,30,20,10];
+
+  var data2 = [{key: 'stationary', value:26},
+              {key: 'walking', value:30},
+              {key: 'vehicle', value:20},
+              {key: 'plane', value:15}];
+
+  var sampleSVG = d3.select("#viz")
+        .append("svg")
+        .attr("width", 200)
+        .attr("height", 250);    
+
+    sampleSVG.selectAll("circle")
+        .data(data2)
+        .enter().append("circle") //'enter()' puts elements in the missing selection, 'append' duplicates circle-html elements
+        .style("fill", "#ff3642")
+        .attr("r", function(d,i){ return d.value; })
+        .attr("cx", 30)
+        .attr("cy", function(d,i) {return 40+i*60})
+        .on("mouseover", function(){d3.select(this).style("fill", "#91cbec");})
+        .on("mouseout", function(){d3.select(this).style("fill", "#ff3642");})
+      
+
+    sampleSVG.selectAll(".text")     
+      .data(data2)
+      .enter()
+      .append("text")
+      .attr('x', 80)
+      .attr("y",function(d,i) {return 45+i*60})
+      .text(function(d) { return d.key; });   
+
+    sampleSVG.selectAll(".text")     
+      .data(data2)
+      .enter()
+      .append("text")
+      .style("fill", '#ffffff')
+      .attr('x', 20)
+      .attr("y",function(d,i) {return 45+i*60})
+      .text(function(d) { return d.value; });  
+
+// Call the resize function whenever a resize event occurs
+window.addEventListener('resize', resize, true)
+//d3.select(window).on('resize', resize());
+
+function resize() {
+console.log('resize')
+}
+
+
+</script>
+</body>
