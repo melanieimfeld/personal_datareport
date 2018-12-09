@@ -7,4 +7,7 @@ I did some data preprocessing with my location data in Python (see files) and re
 Here's a screenshot on what this looks like:
 
 
-<img style="float: center;" src="https://raw.githubusercontent.com/melanieimfeld/personal_datareport/personal_paths_ny.jpg">
+<img style="float: center;" src="https://raw.githubusercontent.com/melanieimfeld/personal_datareport/master/personal_paths_ny.jpg">
+
+
+
